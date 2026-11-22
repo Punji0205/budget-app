@@ -26,6 +26,10 @@
     border-radius: 12px; background: #fff; margin-bottom: 10px; }
   #gate button { width: 100%; font-size: 16px; font-weight: 700; padding: 12px; border: 0; border-radius: 12px;
     background: var(--accent); color: #fff; }
+  #retry { display: none; position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 20px); transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 360px; box-sizing: border-box; background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12); padding: 14px 16px; text-align: center; font-size: 14px; color: var(--sub); }
+  #retry button { margin-top: 10px; width: 100%; font-size: 16px; font-weight: 700; padding: 11px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; }
 </style>
 </head>
 <body>
@@ -38,6 +42,7 @@
     <button type="submit">열기</button>
   </form>
 </div>
+<div id="retry">화면이 열리지 않나요? 접근 키가 틀렸을 수 있어요.<button type="button" id="retryBtn">접근 키 다시 입력</button></div>
 <script>
   // 할 일 자료·키는 이 저장소에 없음. 키는 이 기기에만 저장된다.
   var EXEC = 'https://script.google.com/macros/s/AKfycbz4QdWsaSA4cd8oJgWUaNx9nCzBgVCzEck2NenRDK3zK_LEgS39YVSaRSG0O323zmeHRw/exec';
@@ -46,12 +51,27 @@
   function setStored(k) { try { localStorage.setItem(STORE, k); } catch (e) {} }
   function fromHash() { var m = location.hash.match(/k=([A-Za-z0-9]+)/); return m ? m[1] : ''; }
 
+  // 앱이 정상으로 열리면 신호(wrapperOk)를 보냄 → 10초 안에 없으면 '키 다시 입력' 안내
+  var okTimer = null, opened = false;
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.wrapperOk) { opened = true; clearTimeout(okTimer); document.getElementById('retry').style.display = 'none'; }
+  });
   function open(k) {
     document.getElementById('gate').style.display = 'none';
+    document.getElementById('retry').style.display = 'none';
     var f = document.getElementById('app');
     f.style.display = 'block';
+    opened = false;
     f.src = EXEC + '?k=' + encodeURIComponent(k);
+    clearTimeout(okTimer);
+    okTimer = setTimeout(function () { if (!opened) document.getElementById('retry').style.display = 'block'; }, 10000);
   }
+  document.getElementById('retryBtn').addEventListener('click', function () {
+    document.getElementById('retry').style.display = 'none';
+    document.getElementById('keyInput').value = '';
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    showGate();
+  });
   function showGate() {
     document.getElementById('app').style.display = 'none';
     document.getElementById('gate').style.display = 'flex';
