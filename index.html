@@ -79,6 +79,8 @@
 
   var key = fromHash() || getStored();
   if (key) { setStored(key); open(key); } else { showGate(); }
+  // 이미 열린 화면에서 키가 든 주소(#k=)를 다시 열어도 새 키로 바로 바꿈
+  window.addEventListener('hashchange', function () { var k = fromHash(); if (k) { setStored(k); open(k); } });
 
   document.getElementById('gateForm').addEventListener('submit', function (e) {
     e.preventDefault();
